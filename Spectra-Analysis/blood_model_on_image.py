@@ -44,11 +44,16 @@ sns.set (style = "whitegrid", color_codes = True)
 # FILENAME_WBC_HG = "Basler_acA1300-200um__23253950__20201024_201302105_4.tiff"
 # FILENAME_PAPER_HG = "Basler_acA1300-200um__23253950__20201024_201427690_4.tiff"
 
-DATA_FOLDER_RBC = os.path.join('E:\\', 'Quake', '2020-10-24', 'RBC', 'LED')
-DATA_FOLDER_WBC = os.path.join('E:\\', 'Quake', '2020-10-24', 'WBC', 'LED')
-DATA_FOLDER_PAPER = os.path.join('E:\\', 'Quake', '2020-10-24', 'PAPER')
-DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'gt8ma', 'OneDrive', 'Documents', 'Quake', 'Bluud', 'Data', '020521', '50xv2')
+# DATA_FOLDER_RBC = os.path.join('D:\\', 'Quake', '2020-10-24', 'RBC', 'LED')
+# DATA_FOLDER_WBC = os.path.join('D:\\', 'Quake', '2020-10-24', 'WBC', 'LED')
+# DATA_FOLDER_PAPER = os.path.join('D:\\', 'Quake', '2020-10-24', 'PAPER')
+DATA_FOLDER_RBC = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'RBC', 'LED')
+DATA_FOLDER_WBC = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'WBC', 'LED')
+DATA_FOLDER_PAPER = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'PAPER')
+# DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'gt8ma', 'OneDrive', 'Documents', 'Quake', 'Bluud', 'Data', '020521', '50xv2')
+DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '020521', '50xv2')
 IMAGE_FILENAME = "Image__2021-02-05__18-49-31.tiff"
+IMAGE_FILENAME_2 = "6.png"
 
 # Matplotlib Parameters:
 plt.rcParams['figure.figsize'] = (6, 4)
