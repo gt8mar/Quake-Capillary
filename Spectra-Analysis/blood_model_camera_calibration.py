@@ -45,19 +45,23 @@ sns.set (style = "whitegrid", color_codes = True)
 # FILENAME_WBC_HG = "Basler_acA1300-200um__23253950__20201024_201302105_4.tiff"
 # FILENAME_PAPER_HG = "Basler_acA1300-200um__23253950__20201024_201427690_4.tiff"
 
-# DATA_FOLDER_RBC = os.path.join('D:\\', 'Quake', '2020-10-24', 'RBC', 'LED')
-# DATA_FOLDER_WBC = os.path.join('D:\\', 'Quake', '2020-10-24', 'WBC', 'LED')
-# DATA_FOLDER_PAPER = os.path.join('D:\\', 'Quake', '2020-10-24', 'PAPER')
-DATA_FOLDER_RBC = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'RBC', 'LED')
-DATA_FOLDER_WBC = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'WBC', 'LED')
-DATA_FOLDER_PAPER = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'PAPER')
-# DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'gt8ma', 'OneDrive', 'Documents', 'Quake', 'Bluud', 'Data', '020521', '50xv2')
-DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '020521', '50xv2')
-DATA_FOLDER_CALIBRATION = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', 'camera_calibration')
+DATA_FOLDER_RBC = os.path.join('E:\\', 'Quake', '2020-10-24', 'RBC', 'LED')
+DATA_FOLDER_WBC = os.path.join('E:\\', 'Quake', '2020-10-24', 'WBC', 'LED')
+DATA_FOLDER_PAPER = os.path.join('E:\\', 'Quake', '2020-10-24', 'PAPER')
+# DATA_FOLDER_RBC = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'RBC', 'LED')
+# DATA_FOLDER_WBC = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'WBC', 'LED')
+# DATA_FOLDER_PAPER = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '2020-10-24', 'PAPER')
+DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'gt8ma', 'OneDrive', 'Documents', 'Quake', 'Bluud', 'Data',
+                                 '020521', '50xv2')
+# DATA_FOLDER_IMAGE = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '020521', '50xv2')
+# DATA_FOLDER_CALIBRATION = os.path.join('C:\\', 'Users', 'Luke', 'Documents', 'Marcus', 'Data', 'camera_calibration')
+DATA_FOLDER_CALIBRATION = os.path.join('C:\\', 'Users', 'gt8ma', 'OneDrive', 'Documents', 'Quake',
+                                       'Bluud', 'Data', 'camera_calibration')
+
 IMAGE_FILENAME = "Image__2021-02-05__18-49-31.tiff"
 IMAGE_FILENAME_2 = "6.png"
 CALIBRATION_FILENAME = "Image__2021-02-12__19-00-59.tiff"
-CALIBRATION_FILENAME_2 = "987.png"
+CALIBRATION_FILENAME_A = "987.png"
 
 
 # Matplotlib Parameters:
@@ -141,7 +145,8 @@ def main():
     test_logistic_regression(df, df_image)
 
     # Do fun stuff
-    calibrate_camera(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME)
+    calibrate_camera_b(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME)
+    calibrate_camera_a(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME_A)
 
 
 
@@ -355,16 +360,16 @@ def test_logistic_regression(df, df_image):
 This function draws a box around the diffracted image that we see in camera B that
 shows what camera A is seeing. 
 """
-def calibrate_camera(filefolder, filename):
+def calibrate_camera_b(filefolder, filename):
     image = cv2.imread(os.path.join(filefolder, filename), 0)
     print(image.shape)
     # Make df
     df = pd.DataFrame(data=image)
     array = df.to_numpy()
-    array[630][481:805] = 255
-    array[868][481:805] = 255
-    for row in range(630,868):
-        array[row+1][481] = 255
+    array[630][485:805] = 255
+    array[870][485:805] = 255
+    for row in range(630,870):
+        array[row+1][485] = 255
         array[row+1][805] = 255
     print("pls print")
     print(array)
@@ -372,6 +377,24 @@ def calibrate_camera(filefolder, filename):
     im.save("calibration_box", "PNG")
     im.show()
     return array
+
+def calibrate_camera_a(filefolder, filename):
+    image = cv2.imread(os.path.join(filefolder, filename), 0)
+    print(image.shape)
+    df = pd.DataFrame(data=image)
+    array = df.to_numpy()
+    top_row = -8*630 + 870*8
+    bottom_row = 8*[870-870]
+    left_col = 8*(805-725)
+    right_col = 8*(805-775)
+    for row in range(image.shape[0]):
+        array[row][right_col] = 255
+        array[row][left_col] = 255
+    im = Image.fromarray(array)
+    im.save("calibration_a", "PNG")
+    im.show()
+    return array
+
 
 if __name__ == '__main__':
     main()
