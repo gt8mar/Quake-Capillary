@@ -141,13 +141,15 @@ def main():
 
     # Works up to here
     # Test image on previous data
-    df_image = tiff_to_df(DATA_FOLDER_IMAGE, IMAGE_FILENAME)
-    test_logistic_regression(df, df_image)
+    # df_image = tiff_to_df(DATA_FOLDER_IMAGE, IMAGE_FILENAME)
+    # test_logistic_regression(df, df_image)
 
     # Do fun stuff
-    calibrate_camera_b(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME)
-    calibrate_camera_a(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME_A)
-
+    # calibrate_camera_b(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME)
+    # calibrate_camera_a(DATA_FOLDER_CALIBRATION, CALIBRATION_FILENAME_A)
+    calibrate_camera_b(DATA_FOLDER_IMAGE, IMAGE_FILENAME)
+    calibrate_camera_a(DATA_FOLDER_IMAGE, IMAGE_FILENAME_2)
+    calibrate_camera_a_lines(DATA_FOLDER_IMAGE, IMAGE_FILENAME_2)
 
 
 def make_scree(df):
@@ -387,6 +389,33 @@ def calibrate_camera_a(filefolder, filename):
     bottom_row = 8*[870-870]
     left_col = 8*(805-725)
     right_col = 8*(805-775)
+    for row in range(image.shape[0]):
+        array[row][right_col] = 255
+        array[row][left_col] = 255
+    im = Image.fromarray(array)
+    im.save("calibration_a", "PNG")
+    im.show()
+    return array
+
+def calibrate_camera_a_lines(filefolder, filename):
+    image = cv2.imread(os.path.join(filefolder, filename), 0)
+    print(image.shape)
+    df = pd.DataFrame(data=image)
+    array = df.to_numpy()
+    top_row = -8 * 630 + 870 * 8
+    bottom_row = 8 * [870 - 870]
+    left_col = 8 * (805 - 725)
+    right_col = 8 * (805 - 775)
+    b_lines = [645, 648, 740, 746, 855, 858]
+    b2a_lines = []
+    for line in b_lines:
+        newline = 8 * (870 - line)
+        b2a_lines.append(newline)
+        array[newline][right_col:left_col] = 255
+        array[newline+1][right_col:left_col] = 255
+
+    # array[630][485:805] = 255
+    # array[870][485:805] = 255
     for row in range(image.shape[0]):
         array[row][right_col] = 255
         array[row][left_col] = 255
