@@ -40,8 +40,8 @@ from pypylon import pylon
 import numpy as np
 import cv2
 import time
-import sys
 import datetime
+import os
 
 # ---------------------------------------------------------------------------------------------------------------------------------------
 # Constants
@@ -52,6 +52,17 @@ DATE = int(str(datetime.date.today()).replace("-",""))
 WAVELENGTH = str(input("Please enter the wavelength.").strip())
 SAMPLE = str(input("Please enter the sample name.").strip())
 NUMBER = int(input("Please enter the run number."))
+
+# Create folders for aquisition
+cwd = os.getcwd()
+folder1 = "cameraA_%d_%s_%s" % (DATE, WAVELENGTH, SAMPLE)
+folder2 = "cameraB_%d_%s_%s" % (DATE, WAVELENGTH, SAMPLE)
+path1 = os.path.join(cwd, folder1)
+path2 = os.path.join(cwd, folder2)
+if folder1 not in os.listdir(cwd):
+    os.mkdir(path1)
+if folder2 not in os.listdir(cwd):
+    os.mkdir(path2)
 
 print("cameraB_vid_%d_%s_%s_%d.bmp" % (DATE, WAVELENGTH, SAMPLE, 1))
 # Variables
@@ -75,7 +86,7 @@ bytes_per_pixel = int(nBitsPerPixel / 8)
 # Camera B setup:
 # connecting to the first available camera
 camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
-# Grabbing Continuosely (video) with minimal delay
+# Grabbing Continuously (video) with minimal delay
 camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
 converter = pylon.ImageFormatConverter()
 # converting to opencv bgr format
@@ -154,12 +165,6 @@ height = rectAOI.s32Height
 print(height)
 
 
-
-
-
-
-
-
 # ---------------------------------------------------------------------------------------------------------------------------------------
 # Allocates an image memory for an image having its dimensions defined by width and height and its color depth defined by nBitsPerPixel
 nRet = ueye.is_AllocImageMem(hCam, width, height, nBitsPerPixel, pcImageMemory, MemID)
@@ -193,7 +198,7 @@ Each function has their own special command (ex: ueye.IS_PIXELCLOCK_CMD_GET_DEFA
 initialized variable, and then occasionally requires a size designation. 
 
 """
-
+# ----------------------------------------------------------------------------------------------------------
 # Set pixel clock and exposure time
 maxPxClk = ueye.c_int(PXCL)
 maxFps = ueye.c_double()
@@ -234,7 +239,7 @@ print(new_exposure)
 i = 0
 # Continuous image display
 t0 = time.time()
-framert = []
+# framert = []
 while camera.IsGrabbing():
     while (nRet == ueye.IS_SUCCESS):
         # In order to display the image in an OpenCV window we need to extract the data of our image memory
@@ -243,8 +248,7 @@ while camera.IsGrabbing():
         # t1 = time.time() - t0
         # framert.append(t1)
         # t0 = time.time()
-        # ---------------------------------------------------------------------------------------------------------------------------------------
-
+        #-------------------------------------------------------------------------------------------
         # Camera A setup
         array = ueye.get_data(pcImageMemory, width, height, nBitsPerPixel, pitch, copy=False)           # the shape of this is (19660800,) lol
         bytes_per_pixel = int(nBitsPerPixel / 8)
@@ -273,9 +277,9 @@ while camera.IsGrabbing():
             img2 = pylon.PylonImage()
             img2.AttachGrabResultBuffer(result)
             filename1 = "cameraB_%d_%s_%s_%d_%d.bmp" % (DATE, WAVELENGTH, SAMPLE, NUMBER, i)
-            img2.Save(pylon.ImageFileFormat_Bmp, filename1)
+            img2.Save(pylon.ImageFileFormat_Bmp, os.path.join(path1, filename1))
             filename2 = "cameraA_%d_%s_%s_%d_%d.bmp" % (DATE, WAVELENGTH, SAMPLE, NUMBER, i)
-            cv2.imwrite(filename2, frame)
+            cv2.imwrite(os.path.join(path2, filename2), frame)
             print("saved " + filename2)
             print(frame)
             i += 1
@@ -296,16 +300,16 @@ while camera.IsGrabbing():
                 img2 = pylon.PylonImage()
                 img2.AttachGrabResultBuffer(result)
                 filename1 = "cameraB_vid_%d_%s_%s_%d_%d.bmp" % (DATE, WAVELENGTH, SAMPLE, NUMBER, j)
-                img2.Save(pylon.ImageFileFormat_Bmp, filename1)
+                img2.Save(pylon.ImageFileFormat_Bmp, os.path.join(path1, filename1))
                 filename2 = "cameraA_vid_%d_%s_%s_%d_%d.bmp" % (DATE, WAVELENGTH, SAMPLE, NUMBER, j)
-                cv2.imwrite(filename2, frame)
+                cv2.imwrite(os.path.join(path2, filename2), frame)
             print("video saved")
 
         # Press q if you want to end the loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     break
-print(framert)
+# print(framert)
 # ---------------------------------------------------------------------------------------------------------------------------------------
 
 # Releases an image memory that was allocated using is_AllocImageMem() and removes it from the driver management
