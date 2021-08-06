@@ -41,9 +41,6 @@ if folder2 not in os.listdir(cwd):
     os.mkdir(path2)
 print("cameraB_vid_%d_%s_%s_%d.bmp" % (DATE, WAVELENGTH, SAMPLE, 1))
 
-# Number of images to be grabbed.
-countOfImagesToGrab = 10
-
 # Limits the amount of cameras used for grabbing.
 # It is important to manage the available bandwidth when grabbing with multiple cameras.
 # This applies, for instance, if two GigE cameras are connected to the same network adapter via a switch.
@@ -54,33 +51,35 @@ countOfImagesToGrab = 10
 # provide more information about this topic.
 # The bandwidth used by a FireWire camera device can be limited by adjusting the packet size.
 maxCamerasToUse = 2
+num_img_to_save = 100
 
 # The exit code of the sample application.
 exitCode = 0
 
 ALPHABET_LIST = ["A", "B"]
 
-try:
+tlFactory = pylon.TlFactory.GetInstance()
+devices = tlFactory.EnumerateDevices()
 
-    # Get the transport layer factory.
-    tlFactory = pylon.TlFactory.GetInstance()
+# Create an array of instant cameras for the found devices and avoid exceeding a maximum number of devices.
+cameras = pylon.InstantCameraArray(min(len(devices), maxCamerasToUse))
+l = cameras.GetSize()
 
-    # Get all attached devices and exit application if no device is found.
-    devices = tlFactory.EnumerateDevices()
-    if len(devices) == 0:
-        raise pylon.RuntimeException("No camera present.")
+# Create and attach all Pylon Devices.
+for i, cam in enumerate(cameras):
+    cam.Attach(tlFactory.CreateDevice(devices[i]))
+    # Print the model name of the camera.
+    print("Using device ", cam.GetDeviceInfo().GetModelName())
 
-    # Create an array of instant cameras for the found devices and avoid exceeding a maximum number of devices.
-    cameras = pylon.InstantCameraArray(min(len(devices), maxCamerasToUse))
-
-    l = cameras.GetSize()
-
-    # Create and attach all Pylon Devices.
-    for i, cam in enumerate(cameras):
-        cam.Attach(tlFactory.CreateDevice(devices[i]))
-
-        # Print the model name of the camera.
-        print("Using device ", cam.GetDeviceInfo().GetModelName())
+"""
+Note that this does not grab simultaneously. We can use a hardware trigger. 
+"""
+cameras.StartGrabbing()
+# Grab c_countOfImagesToGrab from the cameras.
+for j in range(num_img_to_save):
+    if not cameras.IsGrabbing():
+        break
+    grabResult = cameras.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
 
     # Starts grabbing for all cameras starting with index 0. The grabbing
     # is started for one camera after the other. That's why the images of all
@@ -88,40 +87,31 @@ try:
     # However, a hardware trigger setup can be used to cause all cameras to grab images synchronously.
     # According to their default configuration, the cameras are
     # set up for free-running continuous acquisition.
-    cameras.StartGrabbing()
 
-    # Grab c_countOfImagesToGrab from the cameras.
-    for j in range(countOfImagesToGrab):
-        if not cameras.IsGrabbing():
-            break
+    # When the cameras in the array are created the camera context value
+    # is set to the index of the camera in the array.
+    # The camera context is a user settable value.
+    # This value is attached to each grab result and can be used
+    # to determine the camera that produced the grab result.
+    camera_index = grabResult.GetCameraContext()
 
-        grabResult = cameras.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+    # Print the index and the model name of the camera.
+    print("Camera ", camera_index, ": ", cameras[camera_index].GetDeviceInfo().GetModelName())
 
-        # When the cameras in the array are created the camera context value
-        # is set to the index of the camera in the array.
-        # The camera context is a user settable value.
-        # This value is attached to each grab result and can be used
-        # to determine the camera that produced the grab result.
-        cameraContextValue = grabResult.GetCameraContext()
+    # Now, the image data can be processed.
+    print("GrabSucceeded: ", grabResult.GrabSucceeded())
+    print("SizeX: ", grabResult.GetWidth())
+    print("SizeY: ", grabResult.GetHeight())
+    img = grabResult.GetArray()
+    # img2 = pylon.PylonImage()
+    # img2.AttachGrabResultBuffer(result)
+    filename1 = "camera%s_vid_%d_%s_%s_%d_%d.bmp" % (camera_index, DATE, WAVELENGTH, SAMPLE, NUMBER, j)
+    img.Save(pylon.ImageFileFormat_Bmp, os.path.join(path1, filename1))
+    print("Gray value of first pixel: ", img[0, 0])
+    img.Release()
 
-        # Print the index and the model name of the camera.
-        print("Camera ", cameraContextValue, ": ", cameras[cameraContextValue].GetDeviceInfo().GetModelName())
-
-        # Now, the image data can be processed.
-        print("GrabSucceeded: ", grabResult.GrabSucceeded())
-        print("SizeX: ", grabResult.GetWidth())
-        print("SizeY: ", grabResult.GetHeight())
-        img = grabResult.GetArray()
-        # img2 = pylon.PylonImage()
-        # img2.AttachGrabResultBuffer(result)
-        filename1 = "camera%s_vid_%d_%s_%s_%d_%d.bmp" % (ALPHABET_LIST[1], DATE, WAVELENGTH, SAMPLE, NUMBER, j)
-        img.Save(pylon.ImageFileFormat_Bmp, os.path.join(path1, filename1))
-        print("Gray value of first pixel: ", img[0, 0])
-
-except genicam.GenericException as e:
-    # Error handling
-    print("An exception occurred.", e.GetDescription())
-    exitCode = 1
+cameras.StopGrabbing()
+cameras.Close()
 
 # Comment the following two lines to disable waiting on exit.
 sys.exit(exitCode)
