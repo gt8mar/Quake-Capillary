@@ -1,2 +1,2 @@
 # Quake-Bluud
-Analysis and programming concerning the Leukocyte project
+Analysis and programming concerning the capillaroscopy project
