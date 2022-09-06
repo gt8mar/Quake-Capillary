@@ -45,32 +45,37 @@ def enumerate_capillaries(image):
     row, col = image.shape
     print(row, col)
     contours = measure.find_contours(image, 0.8)
-    print(len(contours))
+    print("The number of capillaries is " + str(len(contours)))
     contour_array = np.zeros((len(contours), row, col))
     for i in range(len(contours)):
-        # plt.plot(contours[i][:, 1], contours[i][:, 0], linewidth=2)
         grid = np.array(measure.grid_points_in_poly((row, col), contours[i]))
         contour_array[i] = grid
-        # plt.imshow(grid)
-    # plt.show()
-    print(contour_array.shape)
     return contour_array
-
 def make_skeletons(image):
     """
     This function uses the FilFinder package to find and prune skeletons of images.
     :param image: 2D numpy array or list of points that make up polygon mask
     :return: 2D numpy array with skeletons
     """
+    # Load in skeleton class for skeleton pruning
     fil = FilFinder2D(image, mask=image)
+    # Use separate method to get distances
+    skeleton, distance = medial_axis(image, return_distance=True)
+    # This is a necessary step for the fil object. It does nothing.
     fil.preprocess_image(skip_flatten=True)
-    fil.medskel(verbose=True)
+    # This makes the skeleton
+    fil.medskel()
+    # This prunes the skeleton
     fil.analyze_skeletons(branch_thresh=BRANCH_THRESH * u.pix, prune_criteria='length',
                           skel_thresh=BRANCH_THRESH * u.pix)
-    plt.imshow(fil.skeleton, origin='lower')
+    # Multiply the distances by the skeleton, selects out the distances we care about.
+    distance_on_skeleton = distance * fil.skeleton
+    distances = add_radii_value(distance_on_skeleton)           # adds the distance values into a list
+    plt.hist(distances)
     plt.show()
-    return fil.skeleton
-
+    plt.imshow(distance_on_skeleton, cmap='magma')
+    plt.show()
+    return fil.skeleton, distances
 def add_radii_value(distance_array):
     """
     This function creates a list of distances for the skeleton of an image
@@ -78,7 +83,6 @@ def add_radii_value(distance_array):
     :return: list of distances
     """
     skeleton_coordinates = np.transpose(np.nonzero(distance_array))
-    print(len(skeleton_coordinates))
     distances = []
     for i in range(len(skeleton_coordinates)):
         row = skeleton_coordinates[i][0]
@@ -87,84 +91,37 @@ def add_radii_value(distance_array):
     return distances
 
 """
-Import and select polygons:
 ---------------------------------------------------------------------------------------------------------------------
 """
-segmented = cv2.imread(os.path.join(FILEFOLDER, FILENAME))
-segmented_2D = np.mean(segmented, axis=2)
-segmented_2D[segmented_2D != 0] = 1
-# TODO: clean this up
-contours = enumerate_capillaries(segmented_2D)
-print(contours[0])
-skeleton2 = make_skeletons(contours[0])
-plt.imshow(skeleton2)
-plt.show()
-# fil = FilFinder2D(segmented_2D, mask=segmented_2D)
-# fil.preprocess_image(skip_flatten=True)
-# fil.medskel(verbose=True)
-# fil.analyze_skeletons(branch_thresh = BRANCH_THRESH * u.pix, prune_criteria='length',
-#                       skel_thresh=BRANCH_THRESH * u.pix)
-# plt.imshow(fil.skeleton, origin= 'lower')
-# plt.show()
-#
-# skeleton, distance = medial_axis(segmented_2D, return_distance=True)
-# skeleton = skeleton.astype(np.uint8)
-# skel = skeletonize(segmented_2D)
-# skel_lee = skeletonize(segmented_2D, method='lee')
-# dist_on_skel = distance*skeleton
-# print(distance)
-# print(np.transpose(np.nonzero(distance)))
-# distances = add_radii_value(dist_on_skel)           # This adds the distance values into a list
-# print(len(distances))
-#
-# plt.hist(distances)
-# plt.show()
-#
-#
-# fig, axes = plt.subplots(2, 2, figsize=(8, 8), sharex=True, sharey=True)
-# ax = axes.ravel()
-#
-# ax[0].imshow(segmented_2D, cmap=plt.cm.gray)
-# ax[0].set_title('original')
-# ax[0].axis('off')
-#
-# ax[1].imshow(dist_on_skel, cmap='magma')
-# ax[1].contour(segmented_2D, [0.5], colors='w')
-# ax[1].set_title('medial_axis')
-# ax[1].axis('off')
-#
-# ax[2].imshow(skel, cmap=plt.cm.gray)
-# ax[2].set_title('skeletonize')
-# ax[2].axis('off')
-#
-# ax[3].imshow(skel_lee, cmap=plt.cm.gray)
-# ax[3].set_title("skeletonize (Lee 94)")
-# ax[3].axis('off')
-#
-# fig.tight_layout()
-# plt.show()
-#
-# plt.imshow(dist_on_skel, cmap='magma')
-# plt.contour(segmented_2D, [0.5], colors = 'w')
-# plt.title('Centerlines with distance values')
-# plt.show()
+def main():
+    # Read in the mask
+    segmented = cv2.imread(os.path.join(FILEFOLDER, FILENAME))
+    # Make mask 2D
+    segmented_2D = np.mean(segmented, axis=2)
+    # Make mask either 1 or 0
+    segmented_2D[segmented_2D != 0] = 1
+    # Make a numpy array of images with isolated capillaries. The mean/sum of this is segmented_2D.
+    contours = enumerate_capillaries(segmented_2D)
+    skeletons = []
+    capillary_distances = []
+    for contour in contours:
+        skeleton, distances = make_skeletons(contour)
+        skeletons.append(skeleton)
+        capillary_distances.append(distances)
+        
+
+    return 0
+
+
+
+
+
 
 
 """
 -----------------------------------------------------------------------------
 """
-
-
-# """
-# --------------------------------------------------------------------------------------------
-# """
-#
-# # def main():
-# #     masks = []
-# #     load_masks()
-# #     for mask in masks:
-# #         mask_centerline = centerline(mask)
-#
-#
-#
-#
+# This provided line is required at the end of a Python file
+# to call the main() function.
+if __name__ == "__main__":
+    main()
