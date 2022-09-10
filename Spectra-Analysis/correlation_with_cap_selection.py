@@ -28,21 +28,15 @@ def tryint(s):
         return int(s)
     except:
         return s
-
-
 def alphanum_key(s):
     """ Turn a string into a list of string and number chunks.
         "z23a" -> ["z", 23, "a"]
     """
     return [tryint(c) for c in re.split('([0-9]+)', s)]
-
-
 def sort_nicely(l):
     """ Sort the given list in the way that humans expect.
     """
     l.sort(key=alphanum_key)
-
-
 images = [img for img in os.listdir(FILEFOLDER) if img.endswith(".tif") or img.endswith(
     ".tiff")]  # if this came out of moco the file suffix is .tif otherwise it's tiff
 sort_nicely(images)
@@ -53,15 +47,11 @@ sort_nicely(images)
 def bin_image_by_2_space(image):
     return (image[::2, ::2] + image[1::2, ::2]
             + image[::2, 1::2] + image[1::2, 1::2]) // 4
-    
 def bin_image_array_by_2_space(image_array):
     return (image_array[:, ::2, ::2] + image_array[:, 1::2, ::2]
             + image_array[:, ::2, 1::2] + image_array[:, 1::2, 1::2])//4
-
 def bin_image_array_by_2_time(image_array):
     return (image_array[:-1:2,:,:] + image_array[1::2, :, :])//2
-
-
 
 # Initialize array for images
 z_time = len(images)
@@ -168,22 +158,19 @@ corr_x_round = np.around(corr_x, decimals=2)
 corr_y_round = np.around(corr_y, decimals=2)
 
 
-np.savetxt("corr_x_total.txt", corr_x)
-np.savetxt("corr_y_total.txt", corr_y)
-np.savetxt("corr_x_selected.txt", corr_x * segmented_binned_space)
-np.savetxt("corr_y_selected.txt", corr_y * segmented_binned_space)
+# np.savetxt("corr_x_total.txt", corr_x)
+# np.savetxt("corr_y_total.txt", corr_y)
+# np.savetxt("corr_x_selected.txt", corr_x * segmented_binned_space)
+# np.savetxt("corr_y_selected.txt", corr_y * segmented_binned_space)
 
 
-
-# # plot image background
-# ax = plt.subplot()
-# im = ax.imshow(background)
-# # create an axes on the right side of ax. The width of cax will be 5%
-# # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-# divider = make_axes_locatable(ax)
-# cax = divider.append_axes("right", size="5%", pad=0.05)
-# plt.colorbar(im, cax=cax)
-# plt.show()
+number_nonzero = len(np.transpose(np.nonzero(segmented_binned_space)))
+print(number_nonzero)
+print(segmented_binned_space.shape[0]*segmented_binned_space.shape[1])
+avg_flow_rate = np.sqrt( (corr_x * corr_x * segmented_binned_space) + (corr_y * corr_y * segmented_binned_space) ) #/ number_nonzero
+print("The average flow magnitude is: ")
+print(np.sum(avg_flow_rate)/number_nonzero)
+print("I have no idea what these units are.")
 
 
 print("--------------------")
