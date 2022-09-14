@@ -13,11 +13,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import os
-import re
 from skimage import measure
-from skimage.morphology import medial_axis, skeletonize
+from skimage.morphology import medial_axis
 from fil_finder import FilFinder2D
 import astropy.units as u
+import time
 
 
 FILEFOLDER = os.path.join("C:\\", 'Users', 'Luke', 'Documents', 'Marcus', 'Data', '220513')
@@ -50,8 +50,10 @@ def enumerate_capillaries(image):
     for i in range(len(contours)):
         grid = np.array(measure.grid_points_in_poly((row, col), contours[i]))
         contour_array[i] = grid
+        # plt.plot(contours[i][:, 1], contours[i][:, 0], linewidth=2)   # this shows all of the enumerated capillaries
+    # plt.show()
     return contour_array
-def make_skeletons(image):
+def make_skeletons(image, verbose = True):
     """
     This function uses the FilFinder package to find and prune skeletons of images.
     :param image: 2D numpy array or list of points that make up polygon mask
@@ -71,10 +73,12 @@ def make_skeletons(image):
     # Multiply the distances by the skeleton, selects out the distances we care about.
     distance_on_skeleton = distance * fil.skeleton
     distances = add_radii_value(distance_on_skeleton)           # adds the distance values into a list
-    plt.hist(distances)
-    plt.show()
-    plt.imshow(distance_on_skeleton, cmap='magma')
-    plt.show()
+    # This plots the histogram of the capillary and the capillary with distance values.
+    if verbose:
+        plt.hist(distances)
+        plt.show()
+        plt.imshow(distance_on_skeleton, cmap='magma')
+        plt.show()
     return fil.skeleton, distances
 def add_radii_value(distance_array):
     """
@@ -89,6 +93,37 @@ def add_radii_value(distance_array):
         col = skeleton_coordinates[i][1]
         distances.append(distance_array[row][col])
     return distances
+def average_array(array):
+    """
+    This returns an averaged array with half length of the input 1d array
+    :param array: 1d numpy array length 2n
+    :return: 1d array length n
+    """
+    if np.mod(len(array), 2) == 0:
+        return (array[::2] + array[1::2]) // 2
+    else:
+        return (array[:-1:2] + array[1::2]) // 2
+def unbend_capillaries_1D(array):
+    """
+        This returns an array with every other value taken out and sent to the back
+        :param array: 1d numpy array length n
+        :return: 1d array length n but every other value is removed and sent to the end
+        """
+    if np.mod(len(array), 2) == 0:
+        return np.hstack((array[::2], np.flip(array[1::2])))
+    else:
+        return np.hstack((array[:-1:2], np.flip(array[1::2])))
+def unbend_capillaries_2D(array_2D):
+    """
+        This returns an array with every other value taken out and sent to the back
+        :param array: 1d numpy array length n
+        :return: 1d array length n but every other value is removed and sent to the end
+        """
+    x = unbend_capillaries_1D(array_2D[0])
+    y = unbend_capillaries_1D(array_2D[1])
+    new_array = np.vstack((x, y))
+    return np.transpose(new_array)
+
 
 """
 ---------------------------------------------------------------------------------------------------------------------
@@ -104,17 +139,32 @@ def main():
     contours = enumerate_capillaries(segmented_2D)
     skeletons = []
     capillary_distances = []
-    for contour in contours:
-        skeleton, distances = make_skeletons(contour)
+    capillary_distances_unwound = []
+    flattened_distances = []
+    for i in range(contours.shape[0]):
+        skeleton, distances = make_skeletons(contours[i], verbose=False)
         skeletons.append(skeleton)
         capillary_distances.append(distances)
-        
+        flattened_distances += list(distances)
+        capillary_distances_unwound.append(unbend_capillaries_1D(np.array(distances)))
+    # plt.plot(capillary_distances_unwound[0])
+    # # plt.plot(np.array(capillary_distances[0]))                            # This is interesting, it gives radii as found from the top
+    # # plt.plot(average_array(np.array(capillary_distances[0])))             # This does the same as above but averages.
+    # plt.title('Capillary radii')
+    # plt.show()
+
+    # save csv file to import into blood_flow_linear.py
+    # skeleton_coords = unbend_capillaries_2D(np.nonzero(skeleton))
+    # np.savetxt('test.csv', skeleton_coords, delimiter=',')
+
+    # Make overall histogram
+    # plt.hist(flattened_distances)
+    # plt.show()
+
+    # TODO: Write program to register radii maps with each other :)
+    # TODO: Abnormal capillaries, how do.
 
     return 0
-
-
-
-
 
 
 
@@ -124,4 +174,7 @@ def main():
 # This provided line is required at the end of a Python file
 # to call the main() function.
 if __name__ == "__main__":
+    ticks = time.time()
     main()
+    print("--------------------")
+    print("Runtime: " + str(time.time() - ticks))
