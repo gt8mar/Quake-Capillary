@@ -18,8 +18,9 @@ import pandas as pd
 import statsmodels.api as sm
 
 FILEFOLDER = 'C:\\Users\\Luke\\Documents\\Marcus\\Data\\220513\\pointer2small'
-SKELETON_FILE = 'test.csv'
+SKELETON_FILE = 'test_skeleton_coords_7.csv'
 PIXELS_PER_UM = 2
+FRAME_PAD = 25
 
 # Sort images first
 def tryint(s):
@@ -56,12 +57,14 @@ def load_image_array(image_list):
     z_time = len(image_list)
     image_example = cv2.imread(os.path.join(FILEFOLDER, image_list[0]))
     rows, cols, layers = image_example.shape
-    image_array = np.zeros((z_time, rows, cols), dtype='uint16')
+    image_array = np.zeros((z_time, rows-FRAME_PAD-FRAME_PAD, cols-FRAME_PAD-FRAME_PAD),
+                            dtype='uint16')
     # loop to populate array
     for i in range(z_time):
         image = cv2.imread(os.path.join(FILEFOLDER, image_list[i]))
         image_2D = np.mean(image, axis=2)
-        image_array[i] = image_2D
+        image_minus_border = image_2D[FRAME_PAD:-FRAME_PAD, FRAME_PAD:-FRAME_PAD]
+        image_array[i] = image_minus_border
     return image_array
 def generate_operator(vector):
     """
@@ -158,6 +161,7 @@ def test(row, col, radius = 5):
     # The two lines below could be merged, but I stored the mask
     # for code clarity.
     mask = (x[np.newaxis, :] - col) ** 2 + (y[:, np.newaxis] - row) ** 2 < r ** 2
+    print(mask)
     arr[mask] = 123
 
     # This plot shows that only within the circle the value is set to 123.
@@ -176,8 +180,9 @@ def main():
     max = np.max(image_array)
     print("The size of the array is " + str(image_array.shape))
     centerline_array = build_centerline_vs_time(image_array, SKELETON_FILE, long= True)
+    np.savetxt('centerline_array_7_long.csv', centerline_array, delimiter=',')
 
-    # Plot pixels vs time:
+    # # Plot pixels vs time:
     # plt.imshow(centerline_array)
     # plt.title('centerline pixel values per time')
     # plt.xlabel('frame')
