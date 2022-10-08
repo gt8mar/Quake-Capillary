@@ -14,11 +14,11 @@ import cv2
 import os
 import re
 import time
-import pandas as pd
-import statsmodels.api as sm
+from PIL import Image
 
 FILEFOLDER = 'C:\\Users\\Luke\\Documents\\Marcus\\Data\\220513\\pointer2small'
-SKELETON_FILE = 'test_skeleton_coords_7.csv'
+SKELETON_FILE = 'test_skeleton_coords_5v3.csv'
+SKELETON_FILE_LIST = ['test_skeleton_coords_2.csv','test_skeleton_coords_3.csv','test_skeleton_coords_4.csv','test_skeleton_coords_5.csv','test_skeleton_coords_7.csv']
 PIXELS_PER_UM = 2
 FRAME_PAD = 25
 
@@ -114,7 +114,7 @@ def average_array(array):
         return (array[::2] + array[1::2]) // 2
     else:
         return (array[:-1:2] + array[1::2]) // 2
-def build_centerline_vs_time(image, skeleton_txt, delimiter = ',', long = False):
+def build_centerline_vs_time(image, skeleton_txt, delimiter = ',', long = False, offset = False):
     """
     This function takes an image and text file (default: csv) of the coordinates of a
     skeleton and outputs an image of the centerline pixel values vs time.
@@ -123,6 +123,11 @@ def build_centerline_vs_time(image, skeleton_txt, delimiter = ',', long = False)
     :return: centerline_array: 2D numpy array that shows the pixels of the centerline vs time.
     """
     skeleton_coords = np.genfromtxt(skeleton_txt, delimiter=delimiter, dtype=int)
+    if offset:
+        row_offset = np.full((skeleton_coords.shape[0], 1), 0)
+        col_offset = np.full((skeleton_coords.shape[0], 1), -100)
+        offset_array = np.hstack((row_offset, col_offset))
+        skeleton_coords = skeleton_coords + offset_array
     centerline_array = np.zeros((skeleton_coords.shape[0], image.shape[0]))
     if long == False:
         for i in range(skeleton_coords.shape[0]):
@@ -149,6 +154,12 @@ def average_in_circle(image, row, col, radius = 5):
     mask = (x[np.newaxis, :] - col) ** 2 + (y[:, np.newaxis] - row) ** 2 < radius ** 2
     circle_values = image[mask].reshape(1,-1)
     return np.mean(circle_values)
+def normalize_image(image):
+    image = image - np.min(image)
+    image = image / np.max(image)
+    image *= 255
+    image = np.rint(image)
+    return image
 def test(row, col, radius = 5):
     x = np.arange(0, 32)
     y = np.arange(0, 32)
@@ -169,6 +180,8 @@ def test(row, col, radius = 5):
     plt.pcolormesh(x, y, arr)
     plt.colorbar()
     plt.show()
+def offset_skeleton(skeleton_txt, OFFSET):
+    pass
 
 def main():
     # test(16, 12, 5)
@@ -179,15 +192,25 @@ def main():
     background = np.mean(image_array, axis=0)
     max = np.max(image_array)
     print("The size of the array is " + str(image_array.shape))
-    centerline_array = build_centerline_vs_time(image_array, SKELETON_FILE, long= True)
-    np.savetxt('centerline_array_7_long.csv', centerline_array, delimiter=',')
 
-    # # Plot pixels vs time:
-    # plt.imshow(centerline_array)
-    # plt.title('centerline pixel values per time')
-    # plt.xlabel('frame')
-    # plt.ylabel('centerline pixel')
-    # plt.show()
+    # save one file
+    centerline_array = build_centerline_vs_time(image_array, SKELETON_FILE, long=True, offset=True)
+    # np.savetxt(str(SKELETON_FILE) + "centerline_array_long_offset.csv", centerline_array, delimiter=',')
+
+    # for file in SKELETON_FILE_LIST:
+    #     print(str(file))
+    #     centerline_array = build_centerline_vs_time(image_array, file, long= True)
+    #     np.savetxt(str(file) + "centerline_array_long.csv", centerline_array, delimiter=',')
+    #     normalized_array = normalize_image(centerline_array)
+    #     im = Image.fromarray(normalized_array)
+    #     im.save(str(file) + "centerline_array_long.tiff")
+
+    # Plot pixels vs time:
+    plt.imshow(centerline_array)
+    plt.title('centerline pixel values per time')
+    plt.xlabel('frame')
+    plt.ylabel('centerline pixel')
+    plt.show()
 
     # TODO: calculate flow rate
     return 0

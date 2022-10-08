@@ -49,18 +49,20 @@ def enumerate_capillaries(image, short = False, verbose = False):
     row, col = image.shape
     print(row, col)
     contours = measure.find_contours(image, 0.8)
-    print("The number of capillaries is " + str(len(contours)))
+    print("The number of capillaries is: " + str(len(contours)))
     if short == False:
         contour_array = np.zeros((len(contours), row, col))
         for i in range(len(contours)):
             grid = np.array(measure.grid_points_in_poly((row, col), contours[i]))
             contour_array[i] = grid
             if verbose == True:
-                plt.imshow(contour_array[i])   # plt.plot(contours[i][:, 1], contours[i][:, 0], linewidth=2) this shows all of the enumerated capillaries
-                plt.show()
+                plt.plot(contours[i][:, 1], contours[i][:, 0], linewidth=2, label = "capilary " + str(i)) #plt.imshow(contour_array[i])   # plt.plot(contours[i][:, 1], contours[i][:, 0], linewidth=2) this shows all of the enumerated capillaries
+                # plt.show()
             else:
                 pass
-        # plt.show()
+        plt.gca().invert_yaxis()
+        plt.legend()
+        plt.show()
         return contour_array
     # This is only used if we don't want to iterate through the whole set of contours.
     # This is for testing.
@@ -195,13 +197,13 @@ def main():
     # Make mask either 1 or 0
     segmented_2D[segmented_2D != 0] = 1
     # Make a numpy array of images with isolated capillaries. The mean/sum of this is segmented_2D.
-    contours = enumerate_capillaries(segmented_2D, short=False, verbose=False)
+    contours = enumerate_capillaries(segmented_2D, short=False, verbose=True)
     skeletons = []
     capillary_distances = []
     skeleton_coords = []
     flattened_distances = []
     for i in range(contours.shape[0]):
-        skeleton, distances = make_skeletons(contours[i], verbose=False)     # Skeletons come out in the shape
+        skeleton, distances = make_skeletons(contours[i], verbose=True)     # Skeletons come out in the shape
         sorted_skeleton_coords, optimal_order = sort_continuous(np.asarray(np.nonzero(skeleton)), verbose= False)
         ordered_distances = distances[optimal_order]
         capillary_distances.append(ordered_distances)
@@ -209,21 +211,21 @@ def main():
         skeleton_coords.append(sorted_skeleton_coords)
     plt.show()
 
-    # # Plot example of capillary
-    # plt.plot(capillary_distances[0])
-    # plt.show()
-    # # Plot all capillaries together
-    # for i in range(len(capillary_distances)):
-    #     plt.plot(capillary_distances[i])
-    # plt.title('Capillary radii')
-    # plt.show()
+    # Plot example of capillary
+    plt.plot(capillary_distances[0])
+    plt.show()
+    # Plot all capillaries together
+    for i in range(len(capillary_distances)):
+        plt.plot(capillary_distances[i])
+    plt.title('Capillary radii')
+    plt.show()
 
 
-    sorted_skeleton_example = skeleton_coords[7]
-    # save csv file to import into blood_flow_linear.py
-    # np.savetxt('test3.csv', skeleton_coords, delimiter=',')
-
-    np.savetxt('test_skeleton_coords_7.csv', sorted_skeleton_example, delimiter=',')
+    # sorted_skeleton_example = skeleton_coords[7]
+    # # save csv file to import into blood_flow_linear.py
+    # # np.savetxt('test3.csv', skeleton_coords, delimiter=',')
+    #
+    # np.savetxt('test_skeleton_coords_7.csv', sorted_skeleton_example, delimiter=',')
 
 
     # Make overall histogram
