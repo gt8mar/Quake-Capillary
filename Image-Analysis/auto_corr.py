@@ -61,9 +61,7 @@ def load_image_array(image_list):
     image_array = np.zeros((z_time, rows, cols), dtype='uint16')
     # loop to populate array
     for i in range(z_time):
-        image = cv2.imread(os.path.join(FILEFOLDER, image_list[i]))
-        image_2D = np.mean(image, axis=2)
-        image_array[i] = image_2D
+        image_array[i] = cv2.imread(os.path.join(FILEFOLDER, image_list[i]), cv2.IMREAD_GRAYSCALE)
     return image_array
 def generate_operator(vector):
     """
