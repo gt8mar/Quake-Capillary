@@ -13,7 +13,8 @@ import glob
 import re
 import time
 
-UMBRELLA_FOLDER = 'C:\\Users\\gt8mar\\Desktop\\data\\221010'
+# UMBRELLA_FOLDER = 'C:\\Users\\gt8mar\\Desktop\\data\\221010'
+FILEFOLDER = "C:\\Users\\gt8mar\\PycharmProjects\\bluud\dual_camera\\vid4_background"
 DATE = "221010"
 PARTICIPANT = "Participant3"
 
@@ -50,14 +51,12 @@ def pic2vid(image_folder, images, video_name):
     """
     frame = cv2.imread(os.path.join(image_folder, images[0]))
     height, width, layers = frame.shape
-
     video = cv2.VideoWriter(video_name, 0, 60, (width, height))
-
     for image in images:
         video.write(cv2.imread(os.path.join(image_folder, image)))
-
     cv2.destroyAllWindows()
     video.release()
+    return 0
 
 def main():
     # for folder in os.listdir(UMBRELLA_FOLDER):
@@ -69,10 +68,9 @@ def main():
     """
     ------------------for only one file ------------------------------------
     """
-    path = os.path.join(UMBRELLA_FOLDER)
-    images = get_images(path)
-    video_name = DATE + "_" + PARTICIPANT + "_"  + "vid1" + ".avi"
-    pic2vid(path, images, video_name)
+    images = get_images(FILEFOLDER)
+    video_name = DATE + "_" + PARTICIPANT + "_"  + "vid4" + ".avi"
+    pic2vid(FILEFOLDER, images, video_name)
     return 0
 
 """
