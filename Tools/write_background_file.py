@@ -49,25 +49,24 @@ def main():
     # Here we make a list of image files
     image_files = []
     for i in range(len(images)):
-        picture = np.array(cv2.imread(os.path.join(FILEFOLDER, images[i])))
-        new_picture = np.mean(picture, axis=2)
+        picture = np.array(cv2.imread(os.path.join(FILEFOLDER, images[i]), cv2.IMREAD_GRAYSCALE))
         # # This chops the image into smaller pieces (important if there has been motion correction)
-        new_new_picture = new_picture[15:-25, 25:-25]
+        new_new_picture = picture[15:-25, 25:-25]
         # new_new_picture[new_new_picture > 5] = 5
         image_files.append(new_new_picture)
     image_files = np.array(image_files)
     ROWS, COLS = image_files[0].shape
     background = np.mean(image_files, axis=0)
 
-    ax = plt.subplot()
-    im = ax.imshow(background)
-
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax)
-    plt.show()
+    # ax = plt.subplot()
+    # im = ax.imshow(background)
+    #
+    # # create an axes on the right side of ax. The width of cax will be 5%
+    # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    # divider = make_axes_locatable(ax)
+    # cax = divider.append_axes("right", size="5%", pad=0.05)
+    # plt.colorbar(im, cax=cax)
+    # plt.show()
 
 
     """
@@ -79,47 +78,44 @@ def main():
     image_files = image_files - background
     print(np.max(image_files))
     print(np.min(image_files))
-    MIN = 0 - np.min(image_files)
-    image_files = image_files + MIN
-    MULT = 255 / np.max(image_files)
-    image_files = image_files * round(MULT, 1)
+
+    image_files = image_files - np.min(image_files)
+    image_files = image_files / np.max(image_files)
+    image_files = np.array(image_files * 255, dtype=np.uint8)
     print('the following should never be less than 0')
     print(np.min(image_files))
 
-    # Plot with newly enhanced contrast
-    ax = plt.subplot()
-    im = ax.imshow(image_files[10])
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax)
-    plt.show()
+    # # Plot with newly enhanced contrast
+    # ax = plt.subplot()
+    # im = ax.imshow(image_files[10])
+    # # create an axes on the right side of ax. The width of cax will be 5%
+    # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    # divider = make_axes_locatable(ax)
+    # cax = divider.append_axes("right", size="5%", pad=0.05)
+    # plt.colorbar(im, cax=cax)
+    # plt.show()
 
-    #
-    # # write new folder of reduced images:
-    # cwd = os.getcwd()
-    # folder = FILEFOLDER + "_background"
-    # path = os.path.join(cwd, folder)
-    # if folder not in os.listdir(cwd):
-    #     os.mkdir(path)
-    #
-    # for i in range(len(image_files)):
-    #     file = image_files[i]
-    #     filename = images[i]
-    #     # Make 3D again
-    #     # indexing with np.newaxis inserts a new 3rd dimension, which we then repeat the
-    #     # array along, (you can achieve the same effect by indexing with None, see below)
-    #     file_3D = np.repeat(file[:, :, np.newaxis], 3, axis=2)
-    #     file_3D = np.uint8(file_3D)
-    #     # write to new folder
-    #     cv2.imwrite(os.path.join(path, filename), file)
-    #
-    # # Add background file
-    # bkgd_name = str(images[0].strip("."))
-    # bkgd_name += "_background"
-    # bkgd_name += ".tiff"
-    # cv2.imwrite(os.path.join(path, bkgd_name), background)
+
+    # write new folder of reduced images:
+    cwd = os.getcwd()
+    folder = "vid4" + "_background"
+    path = os.path.join(cwd, folder)
+    if folder not in os.listdir(cwd):
+        os.mkdir(path)
+
+    for i in range(len(image_files)):
+        file = image_files[i]
+        filename = images[i]
+
+        # write to new folder
+        cv2.imwrite(os.path.join(path, filename), file)
+
+    # Add background file
+    background = background.astype('uint8')
+    bkgd_name = str(images[0].strip("."))
+    bkgd_name += "_background"
+    bkgd_name += ".tiff"
+    cv2.imwrite(os.path.join(path, bkgd_name), background)
     return 0
 
 """
