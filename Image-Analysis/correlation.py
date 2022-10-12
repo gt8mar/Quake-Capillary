@@ -58,8 +58,8 @@ def load_image_array(image_list):
         image_array[i] = cv2.imread(os.path.join(FILEFOLDER, image_list[i]), cv2.IMREAD_GRAYSCALE)
     return image_array
 def bin_image_by_2_space(image):
-    return (image[:, ::2, ::2] + image[:, 1::2, ::2]
-            + image[:, ::2, 1::2] + image[:, 1::2, 1::2])//4
+    return (image[:, :-1:2, :-1:2] + image[:, 1::2, :-1:2]
+            + image[:, :-1:2, 1::2] + image[:, 1::2, 1::2])//4
 def bin_image_by_2_time(image):
     return (image[:-1:2,:,:] + image[1::2, :, :])//2
 
