@@ -4,6 +4,7 @@ Filename: write_background_file.py
 This file takes a series of images, creates a background file, and creates a folder with
 background subtracted files.
 By: Marcus Forst
+sort_nicely credit: Ned B (https://nedbatchelder.com/blog/200712/human_sorting.html)
 """
 
 import numpy as np
@@ -43,8 +44,8 @@ def sort_nicely(l):
     l.sort(key=alphanum_key)
 
 
-image_folder = 'niyyah_norm'
-images = [img for img in os.listdir(image_folder) if img.endswith(".tif")]
+image_folder = 'C:\\Users\\Luke\\Documents\\Marcus\\Data\\220427_tyler\\220427_vid2_moco'
+images = [img for img in os.listdir(image_folder) if img.endswith(".tif")]                          # if this came out of moco the file suffix is .tif otherwise it's tiff
 sort_nicely(images)
 
 
@@ -53,8 +54,8 @@ image_files = []
 for i in range(len(images)):
     picture = np.array(cv2.imread(os.path.join(image_folder, images[i])))
     new_picture = np.mean(picture, axis=2)
-    # # This chops the image into smaller pieces
-    new_new_picture = new_picture[:, :]
+    # # This chops the image into smaller pieces (important if there has been motion correction)
+    new_new_picture = new_picture[25:1055, 25:1425]
     # new_new_picture[new_new_picture > 5] = 5
     image_files.append(new_new_picture)
 
@@ -88,6 +89,8 @@ MIN = 0 - np.min(image_files)
 image_files = image_files + MIN
 MULT = 255 / np.max(image_files)
 image_files = image_files * round(MULT, 1)
+print('the following should never be less than 0')
+print(np.min(image_files))
 
 # Plot with newly enhanced contrast
 ax = plt.subplot()
