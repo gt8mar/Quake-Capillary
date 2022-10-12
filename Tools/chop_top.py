@@ -17,6 +17,7 @@ import numpy as np
 UMBRELLA_FOLDER = 'C:\\Users\\gt8mar\\Desktop\\data\\221010'
 DATE = "221010"
 PARTICIPANT = "Participant3"
+CHOP = 10
 
 def tryint(s):
     try:
@@ -71,7 +72,7 @@ def main():
         for i in range(len(images)):
             picture = np.array(cv2.imread(os.path.join(path, images[i])))
             # # This chops the image into smaller pieces (important if there has been motion correction)
-            new_new_picture = picture[10:]
+            new_new_picture = picture[CHOP:]
             # image_files.append(new_new_picture)
             cv2.imwrite(os.path.join(path_new, images[i]), new_new_picture)
         print("finished folder " + folder)
