@@ -34,17 +34,17 @@ def sort_nicely(l):
     """ Sort the given list in the way that humans expect.
     """
     l.sort(key=alphanum_key)
-def get_images(FILEFOLDER):
+def get_images(filefolder):
     """
     this function grabs image names, sorts them, and puts them in a list.
-    :param FILEFOLDER: string
+    :param filefolder: string
     :return: images: list of images
     """
-    images = [img for img in os.listdir(FILEFOLDER) if img.endswith(".tif") or img.endswith(
+    images = [img for img in os.listdir(filefolder) if img.endswith(".tif") or img.endswith(
         ".tiff")]  # if this came out of moco the file suffix is .tif otherwise it's tiff
     sort_nicely(images)
     return images
-def load_image_array(image_list):
+def load_image_array(image_list, filefolder):
     """
     This function loads images into a numpy array.
     :param image_list: List of images
@@ -52,12 +52,12 @@ def load_image_array(image_list):
     """
     # Initialize array for images
     z_time = len(image_list)
-    image_example = cv2.imread(os.path.join(FILEFOLDER, image_list[0]))
+    image_example = cv2.imread(os.path.join(filefolder, image_list[0]))
     rows, cols, layers = image_example.shape
     image_array = np.zeros((z_time, rows, cols), dtype='uint16')
     # loop to populate array
     for i in range(z_time):
-        image_array[i] = cv2.imread(os.path.join(FILEFOLDER, image_list[i]), cv2.IMREAD_GRAYSCALE)
+        image_array[i] = cv2.imread(os.path.join(filefolder, image_list[i]), cv2.IMREAD_GRAYSCALE)
     return image_array
 def make_correlation_matrix(image_array_binned):
     """
@@ -109,15 +109,15 @@ def calc_avg_flow(corr_x, corr_y, segmented_array_binned):
     print("I have no idea what these units are.")
     return avg_flow_rate / number_nonzero
 
-def main():
-    images = get_images(FILEFOLDER)
-    image_array = load_image_array(images)
+def main(filefolder = FILEFOLDER, filefolder_segment = FILEFOLDER_SEGMENT):
+    images = get_images(filefolder)
+    image_array = load_image_array(images, filefolder)
     background = np.mean(image_array, axis=0)
 
     # Even out the shapes of the images. The segmented image is chopped by 25 on all sides but the image array is already chopped by 10 rows.
     background = background[15:-25, 25:-25]
     image_array = image_array[:, 15:-25, 25:-25]
-    segmented = cv2.imread(os.path.join(FILEFOLDER_SEGMENT, "vid40000segmented.png"), cv2.IMREAD_GRAYSCALE)   # this comes out as shape [row, col, 3] so in the next frame we make it even and take the mean
+    segmented = cv2.imread(os.path.join(filefolder_segment, "vid40000segmented.png"), cv2.IMREAD_GRAYSCALE)   # this comes out as shape [row, col, 3] so in the next frame we make it even and take the mean
 
     """Bin images to conserve memory and improve resolution"""
     segmented_array_binned = block_reduce(segmented, (2, 2), func=np.mean)
@@ -158,7 +158,9 @@ def main():
 # This provided line is required at the end of a Python file
 # to call the main() function.
 if __name__ == "__main__":
+    print("Run correlation_with_cap_selection.py")
+    print("-------------------------------------")
     ticks = time.time()
     main()
-    print("--------------------")
+    print("-------------------------------------")
     print("Runtime: " + str(time.time() - ticks))
