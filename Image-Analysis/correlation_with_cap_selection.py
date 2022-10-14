@@ -13,6 +13,7 @@ import os
 import re
 import time
 from PIL import Image
+from skimage.measure import block_reduce
 
 FILEFOLDER = 'C:\\Users\\gt8mar\\Desktop\\data\\221010\\vid4_moco'
 FILEFOLDER_SEGMENT = 'C:\\Users\\gt8mar\\Desktop\\data\\221010'
@@ -156,13 +157,13 @@ def main():
     # plt.show()
 
 
-    # plt.quiver(corr_y_slice, corr_x_slice) #, scale = 10000
-    # plt.gca().invert_yaxis()
-    # plt.show()
-    #
-    # plt.quiver(corr_y_slice*seg_slice / SCALE_FACTOR, corr_x_slice*seg_slice / SCALE_FACTOR, scale = 10000)  #scale = 5000
-    # plt.gca().invert_yaxis()
-    # plt.show()
+    plt.quiver(corr_y_slice, corr_x_slice, angle = 'xy') #, scale = 10000
+    plt.gca().invert_yaxis()
+    plt.show()
+
+    plt.quiver(corr_y_slice*seg_slice / SCALE_FACTOR, corr_x_slice*seg_slice / SCALE_FACTOR, angle = 'xy', scale = 10000)  #scale = 5000
+    plt.gca().invert_yaxis()
+    plt.show()
 
     corr_x_round = np.around(corr_x, decimals=2)
     corr_y_round = np.around(corr_y, decimals=2)
