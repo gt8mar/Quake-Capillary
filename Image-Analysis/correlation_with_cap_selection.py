@@ -1,7 +1,7 @@
 """
 Filename: correlation_with_cap_selection.py
 ------------------------------------------------------
-TBD
+This program selects out capillary vectors from the flow vector field.
 By: Marcus Forst
 sort_nicely credit: Ned B (https://nedbatchelder.com/blog/200712/human_sorting.html)
 """
@@ -59,73 +59,29 @@ def load_image_array(image_list):
     for i in range(z_time):
         image_array[i] = cv2.imread(os.path.join(FILEFOLDER, image_list[i]), cv2.IMREAD_GRAYSCALE)
     return image_array
-def bin_image_by_2_space(image):
-    return (image[:-1:2, :-1:2] + image[1::2, :-1:2]  # May still need to do the mod equation with shape[1]
-                + image[:-1:2, 1::2] + image[1::2, 1::2]) // 4
-    # if image.shape[0] % 2 == 0 and image.shape[1] % 2 ==0:
-    #     print("even")
-    #     return (image[::2, ::2] + image[1::2, ::2]
-    #             + image[::2, 1::2] + image[1::2, 1::2]) // 4
-    # elif image.shape[0] % 2 == 0 and image.shape[1] % 2 !=0:
-    #     return (image[:-1:2, :-1:2] + image[1::2, :-1:2]            # May still need to do the mod equation with shape[1]
-    #             + image[:-1:2, 1::2] + image[1::2, 1::2]) // 4
-def bin_image_array_by_2_space(image_array):
-    return (image_array[:, :-1:2, :-1:2] + image_array[:, 1::2, :-1:2]
-            + image_array[:, :-1:2, 1::2] + image_array[:, 1::2, 1::2])//4
-def bin_image_array_by_2_time(image_array):
-    return (image_array[:-1:2,:,:] + image_array[1::2, :, :])//2
+def make_correlation_matrix(image_array_binned):
+    """
+    This function calculates the correlation of a pixel with its nearest pixels in the next frame
+    :param image_array_binned: 2D numpy array: (n row, m col)
+    :return: 2D numpy array: (n-2 row, m-2 col)
+    """
+    # Initialize correlation matrix
+    up_left = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, :-2, :-2]
+    up_mid = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, :-2, 1:-1]
+    up_right = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, :-2, 2:]
+    center_right = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, 1:-1, 2:]
+    center_left = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, 1:-1, :-2]
+    down_right = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, 2:, 2:]
+    down_left = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, 2:, :-2]
+    down_mid = image_array_binned[:-1, 1:-1, 1:-1] * image_array_binned[1:, 2:, 1:-1]
 
-def main():
-    images = get_images(FILEFOLDER)
-    image_array = load_image_array(images)
-    background = np.mean(image_array, axis=0)
-
-    print(background.shape)
-    borders = background[26:-26, 26:-26]
-    print(borders.shape)
-    segmented = cv2.imread(os.path.join(FILEFOLDER_SEGMENT, "vid40000segmented.png"))   # this comes out as shape [row, col, 3] so in the next frame we make it even and take the mean
-    segmented = segmented[1:-2, 1:-2, 0]
-    print(segmented.shape)
-    print("---------------------"
-          "first bin next")
-    image_array = image_array[:, 26:-26, 26:-26]
-
-
-    """Bin images to conserve memory and improve resolution"""
-    image_array_binned_space = bin_image_array_by_2_space(image_array)
-    print(image_array_binned_space.shape)
-    image_array_binned = bin_image_array_by_2_time(image_array_binned_space)
-    print(image_array_binned.shape)
-    segmented_binned_space = bin_image_by_2_space(segmented)
-    segmented_binned_space[segmented_binned_space > 0] = 1
-    print(image_array_binned.shape)
-    print(segmented_binned_space.shape)
-    print("--------- now multiplication")
-
-    max = np.max(image_array_binned)
-
-    # Initialize correllation matrix
-    up_left = image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,:-2,:-2]
-    up_mid = image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,:-2,1:-1]
-    up_right =image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,:-2,2:]
-    center_right =image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,1:-1,2:]
-    center_left =image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,1:-1,:-2]
-    down_right =image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,2:,2:]
-    down_left =image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,2:,:-2]
-    down_mid =image_array_binned[:-1,1:-1,1:-1]*image_array_binned[1:,2:,1:-1]
-
-    segmented_binned_space = segmented_binned_space[1:-1,1:-1]
-    print(down_mid.shape)
-    print(segmented_binned_space.shape)
     """-----------------------------------------------------------------------------------------------------------------"""
 
     # total correlations
-    corr_total_right = 707 * (up_right + down_right)//1000 + center_right
-    corr_total_left = 707 * (up_left + down_left)//1000 + center_left
-    corr_total_up = 707 * (up_left + up_right)//1000 + up_mid
-    corr_total_down = 707 * (down_left + down_right)//1000 + down_mid
-
-    print(corr_total_right.shape)
+    corr_total_right = 707 * (up_right + down_right) // 1000 + center_right
+    corr_total_left = 707 * (up_left + down_left) // 1000 + center_left
+    corr_total_up = 707 * (up_left + up_right) // 1000 + up_mid
+    corr_total_down = 707 * (down_left + down_right) // 1000 + down_mid
 
     # Now we need to make vectors for the correllations:
     corr_total_right_2D = np.mean(corr_total_right, axis=0)
@@ -136,58 +92,64 @@ def main():
     # corr_x /= 5000
     corr_y = corr_total_up_2D - corr_total_down_2D
     # corr_y /= 5000
-    print(np.max(corr_x))
-    print(np.max(corr_y))
-
+    return corr_x, corr_y
+def calc_avg_flow(corr_x, corr_y, segmented_array_binned):
     """
-    TODO:
-    Bin by 4?
+    This function selects capillary vector fields and sums their magnitudes.
+    :param corr_x:
+    :param corr_y:
+    :param segmented_array_binned:
+    :return:
     """
-    corr_x_slice = corr_x[10:-10:BIN_FACTOR, 10:-10:BIN_FACTOR]
-    corr_y_slice = corr_y[10:-10:BIN_FACTOR, 10:-10:BIN_FACTOR]
-    seg_slice = segmented_binned_space[10:-10:BIN_FACTOR, 10:-10:BIN_FACTOR]
-    seg_slice = seg_slice[:-1]
-    print(corr_y_slice.shape)
-    print(seg_slice.shape)
-    print(np.max(seg_slice))
-    rows2, cols2 = corr_y_slice.shape
-
-    # y, x = np.meshgrid(np.arange(0, rows2, 1), np.arange(0, cols2, 1))
-    # plt.quiver(x, y, corr_x_slice, corr_y_slice)
-    # plt.show()
-
-
-    plt.quiver(corr_y_slice, corr_x_slice, angle = 'xy') #, scale = 10000
-    plt.gca().invert_yaxis()
-    plt.show()
-
-    plt.quiver(corr_y_slice*seg_slice / SCALE_FACTOR, corr_x_slice*seg_slice / SCALE_FACTOR, angle = 'xy', scale = 10000)  #scale = 5000
-    plt.gca().invert_yaxis()
-    plt.show()
-
-    corr_x_round = np.around(corr_x, decimals=2)
-    corr_y_round = np.around(corr_y, decimals=2)
-
-
-    # np.savetxt("corr_x_total.txt", corr_x)
-    # np.savetxt("corr_y_total.txt", corr_y)
-    # np.savetxt("corr_x_selected.txt", corr_x * segmented_binned_space)
-    # np.savetxt("corr_y_selected.txt", corr_y * segmented_binned_space)
-
-
-    number_nonzero = len(np.transpose(np.nonzero(segmented_binned_space)))
-    print(number_nonzero)
-    print(segmented_binned_space.shape[0] * segmented_binned_space.shape[1])
-    print(corr_x.shape)
-    print(corr_y.shape)
-    print(segmented_binned_space.shape)
-    print(segmented_binned_space[:,-1].shape)
-    segmented_binned_space = segmented_binned_space[2:-2]
-    segmented_binned_space = np.hstack((segmented_binned_space, segmented_binned_space[:,-1:]))
-    avg_flow_rate = np.sqrt( (corr_x * corr_x * segmented_binned_space) + (corr_y * corr_y * segmented_binned_space) ) #/ number_nonzero
+    number_nonzero = len(np.transpose(np.nonzero(segmented_array_binned)))
+    avg_flow_rate = np.sqrt(
+        (corr_x * corr_x * segmented_array_binned) + (corr_y * corr_y * segmented_array_binned))  # / number_nonzero
     print("The average flow magnitude is: ")
     print(np.sum(avg_flow_rate) / number_nonzero)
     print("I have no idea what these units are.")
+    return avg_flow_rate / number_nonzero
+
+def main():
+    images = get_images(FILEFOLDER)
+    image_array = load_image_array(images)
+    background = np.mean(image_array, axis=0)
+
+    # Even out the shapes of the images. The segmented image is chopped by 25 on all sides but the image array is already chopped by 10 rows.
+    background = background[15:-25, 25:-25]
+    image_array = image_array[:, 15:-25, 25:-25]
+    segmented = cv2.imread(os.path.join(FILEFOLDER_SEGMENT, "vid40000segmented.png"), cv2.IMREAD_GRAYSCALE)   # this comes out as shape [row, col, 3] so in the next frame we make it even and take the mean
+
+    """Bin images to conserve memory and improve resolution"""
+    segmented_array_binned = block_reduce(segmented, (2, 2), func=np.mean)
+    image_array_binned = block_reduce(image_array, (2, 2, 2), func=np.mean)
+    segmented_array_binned[segmented_array_binned > 0] = 1
+
+    corr_x, corr_y = make_correlation_matrix(image_array_binned)
+    segmented_array_binned = segmented_array_binned[1:-1, 1:-1]         # This is the adjustment for the correlation matrix shrinkage
+
+    corr_x_slice = corr_x[10:-10:BIN_FACTOR, 10:-10:BIN_FACTOR]
+    corr_y_slice = corr_y[10:-10:BIN_FACTOR, 10:-10:BIN_FACTOR]
+    seg_slice = segmented_array_binned[10:-10:BIN_FACTOR, 10:-10:BIN_FACTOR]
+
+    rows2, cols2 = corr_y_slice.shape
+
+    # plt.quiver(corr_y_slice, corr_x_slice, angles = 'xy') #, scale = 10000
+    # plt.gca().invert_yaxis()
+    # plt.show()
+
+    # plt.quiver(corr_y_slice*seg_slice / SCALE_FACTOR, corr_x_slice*seg_slice / SCALE_FACTOR, angles = 'xy', scale = 10000)  #scale = 5000
+    # plt.gca().invert_yaxis()
+    # plt.show()
+
+    # corr_x_round = np.around(corr_x, decimals=2)
+    # corr_y_round = np.around(corr_y, decimals=2)
+    #
+    # # np.savetxt("corr_x_total.txt", corr_x)
+    # # np.savetxt("corr_y_total.txt", corr_y)
+    # # np.savetxt("corr_x_selected.txt", corr_x * segmented_array_binned)
+    # # np.savetxt("corr_y_selected.txt", corr_y * segmented_array_binned)
+
+    avg_flow = calc_avg_flow(corr_x, corr_y, segmented_array_binned)
     return 0
 
 """
