@@ -30,13 +30,11 @@ def frames_to_timecode(frame_number, frame_rate):
     :returns: SMPTE timecode as string, e.g. '01:02:12:32' or '01:02:12;32'
     """
     fps_int = int(round(frame_rate))
-    smpte_token = ":"
     # now split our frames into time code
     hours = int(frame_number / (3600 * fps_int) % 24)
     minutes = int((frame_number / (60 * fps_int)) % 60)
     seconds = int((frame_number / fps_int) % 60)
-    frames = int(frame_number)
-    return "%02d:%02d:%02d%s%02d" % (hours, minutes, seconds, smpte_token, frames)
+    return f'{hours}:{minutes}:{seconds}:{frame_number}'
 def add_overlay(img, text, location):
     """ Add overlay to video frame with specific style"""
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -47,7 +45,7 @@ def add_overlay(img, text, location):
     cv2.putText(img, text, location, font, font_scale, font_color, thickness, line_type)
 def add_focus_bar(img, focus):
     """ Add focus bar to video (work in progress)"""
-    add_overlay(img, 'F' + str(focus), (1150, 900))
+    add_overlay(img, f'F:{focus}', (1050, 900))
     return 0
 def calculate_focus_measure(image,method='LAPE'):
     """ Quantify the focus of an image using the laplacian transform """
@@ -74,7 +72,7 @@ def main(filefolder = FILEFOLDER_PATH, folder = FOLDER_NAME, date = DATE,
     :return:
     """
     images = get_images.main(filefolder)
-    video_name = date + "_" + participant + "_"  + folder + ".avi"
+    video_name = f'{date}_{participant}_{folder}.avi'
     frame = cv2.imread(os.path.join(filefolder, images[0]))
     video = cv2.VideoWriter(video_name, 0, 60, (frame.shape[1], frame.shape[0]))
     print(frame.shape)
@@ -83,11 +81,11 @@ def main(filefolder = FILEFOLDER_PATH, folder = FOLDER_NAME, date = DATE,
         img = cv2.imread(os.path.join(filefolder, images[i]))
         focus_measure = calculate_focus_measure(img)
         # add pressure overlay
-        add_overlay(img, "P: " + '0.2' + ' psi', (1000, 50))
+        add_overlay(img, 'P: 1.2 psi', (1050, 50))
         # add frame counter
         add_overlay(img, timecode, (200, 50))
         # add set and sample overlay
-        add_overlay(img, str(SET) + "." + str(SAMPLE) + ":", (50, 50))
+        add_overlay(img, f'{SET}.{SAMPLE}:', (50, 50))
         # add version overlay
         add_overlay(img, "HW: 01", (50, 80))
         add_overlay(img, "SW: 01", (50, 110))
